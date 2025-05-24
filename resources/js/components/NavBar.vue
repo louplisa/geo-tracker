@@ -4,6 +4,7 @@
             <li><router-link to="/">Accueil</router-link></li>
             <li><router-link to="/map">Carte</router-link></li>
             <li><router-link to="/locations/create">Créer une localisation</router-link></li>
+            <li><router-link to="/locations/nearby">Lieux proches</router-link></li>
         </ul>
     </nav>
 </template>

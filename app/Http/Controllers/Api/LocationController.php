@@ -85,4 +85,31 @@ class LocationController extends Controller
         $location->delete();
         return response()->json(null, 204);
     }
+
+    public function nearby(Request $request): JsonResponse
+    {
+        $request->validate([
+            'lat' => 'required|numeric',
+            'lng' => 'required|numeric',
+            'radius' => 'nullable|numeric',
+        ]);
+
+        $lat = $request->input('lat');
+        $lng = $request->input('lng');
+        $radius = $request->input('radius', 10);
+
+        $locations = DB::select("
+        SELECT id, name,
+               ST_X(geom) as lng,
+               ST_Y(geom) as lat
+        FROM locations
+        WHERE ST_DWithin(
+            geom::geography,
+            ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography,
+            ?
+        )
+    ", [$lng, $lat, $radius * 1000]);
+
+        return response()->json($locations);
+    }
 }
