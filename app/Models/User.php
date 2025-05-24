@@ -45,4 +45,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function location()
+    {
+        return $this->morphOne(Location::class, 'locatable');
+    }
 }

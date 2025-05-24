@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Location extends Model
 {
+    /** @use HasFactory<\Database\Factories\LocationFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'name',
     ];
@@ -15,6 +19,12 @@ class Location extends Model
 
     protected $appends = ['coordinates', 'geom_wkt'];
 
+    public function locatable()
+    {
+        return $this->morphTo();
+    }
+
+    // Accessor to retrieve 'geom' coordinates
     public function getCoordinatesAttribute(): ?array
     {
         if (!$this->exists) return null;
@@ -60,5 +70,19 @@ class Location extends Model
         ]);
 
         return $location->refresh();
+    }
+
+    public static function nearby(float $lat, float $lng, float $radiusInKm = 10): \Illuminate\Support\Collection
+    {
+        $sql = "
+        SELECT * FROM locations
+        WHERE ST_DWithin(
+            geom::geography,
+            ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography,
+            ?
+        )
+    ";
+
+        return collect(DB::select($sql, [$lng, $lat, $radiusInKm * 1000]));
     }
 }

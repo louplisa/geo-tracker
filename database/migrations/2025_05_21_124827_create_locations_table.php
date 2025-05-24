@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->geometry('geom')->nullable();
+            $table->nullableMorphs('locatable');
             $table->timestamps();
             $table->spatialIndex('geom');
         });
