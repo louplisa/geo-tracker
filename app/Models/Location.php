@@ -13,6 +13,8 @@ class Location extends Model
 
     protected $fillable = [
         'name',
+        'locatable_id',
+        'locatable_type',
     ];
 
     protected $hidden = ['geom'];

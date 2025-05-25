@@ -6,10 +6,11 @@ use Illuminate\Support\Facades\Http;
 
 class GeoGouvHelper
 {
-    public static function cityByPostalCode(?string $postalCode = null): ?array
+    public static function cityByNameAndZipCode(string $name, string $zipCode): ?array
     {
         $response = Http::get('https://geo.api.gouv.fr/communes', [
-            'codePostal' => $postalCode,
+            'codePostal' => $zipCode,
+            'nom' => $name,
             'fields' => 'nom,centre',
             'format' => 'json',
             'geometry' => 'centre',

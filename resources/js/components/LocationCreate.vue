@@ -1,25 +1,42 @@
 <template>
     <div class="location-create">
-        <h2>Créer une nouvelle location</h2>
-
+        <h2>Créer une nouvelle localisation</h2>
         <form @submit.prevent="submitForm">
             <div>
-                <label for="name">Nom :</label>
-                <input id="name" v-model="name" required />
+                <label for="name">Nom de la ville :</label>
+                <input id="name" v-model="name" required/>
+                <div v-if="fieldErrors.name">
+                    <p v-for="err in fieldErrors.name" :key="err" class="error">{{ err }}</p>
+                </div>
             </div>
-
+            <div>
+                <label for="user">Utilisateur (optionnel) :</label>
+                <select id="user" v-model="selectedUserId">
+                    <option value="">-- Sélectionnez un utilisateur --</option>
+                    <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }}</option>
+                </select>
+                <div v-if="fieldErrors.user">
+                    <p class="error" v-for="err in fieldErrors.user" :key="err">{{ err }}</p>
+                </div>
+            </div>
+            <h3>Par coordonnées GPS</h3>
             <div>
                 <label for="lat">Latitude :</label>
-                <input id="lat" type="number" step="any" v-model.number="lat" required />
+                <input id="lat" v-model.number="lat" step="any" type="number"/>
             </div>
-
             <div>
                 <label for="lng">Longitude :</label>
-                <input id="lng" type="number" step="any" v-model.number="lng" required />
+                <input id="lng" v-model.number="lng" step="any" type="number"/>
             </div>
 
-            <button type="submit" :disabled="loading">
-                {{ loading ? 'Création...' : 'Créer' }}
+            <h3>Par code postal (villes françaises uniquement)</h3>
+            <div>
+                <label for="zipCode">Code postal :</label>
+                <input id="zipCode" v-model="zipCode"/>
+            </div>
+            <button :disabled="loading || isFormInvalid" type="submit">
+                <span v-if="loading">⏳ Création...</span>
+                <span v-else>Créer</span>
             </button>
         </form>
 
@@ -28,49 +45,102 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import axios from 'axios'
 
 const name = ref('')
 const lat = ref(null)
 const lng = ref(null)
+const zipCode = ref('')
+const selectedUserId = ref('')
+const users = ref([])
 const loading = ref(false)
 const message = ref('')
 const error = ref(false)
+const fieldErrors = ref({})
+
+const isFormInvalid = computed(() => {
+    const hasName = !!name.value
+    const hasZipCode = !!zipCode.value
+    const hasCoordinates = lat.value !== null && lng.value !== null
+
+    return !hasName || (hasZipCode === hasCoordinates)
+})
+
+onMounted(async () => {
+    try {
+        const res = await axios.get('/api/users')
+        users.value = res.data
+    } catch {
+        message.value = 'Erreur lors du chargement des utilisateurs.'
+        error.value = true
+    }
+})
+
+function resetForm() {
+    name.value = ''
+    lat.value = null
+    lng.value = null
+    zipCode.value = ''
+    selectedUserId.value = ''
+    fieldErrors.value = {}
+}
+
+async function postLocation(payload, url) {
+    try {
+        await axios.post(url, payload)
+        message.value = 'Localisation créée avec succès !'
+        error.value = false
+        resetForm()
+    } catch (e) {
+        if (e.response && e.response.status === 422) {
+            fieldErrors.value = e.response.data.errors
+        } else {
+            message.value = 'Erreur lors de la création.'
+        }
+        error.value = true
+    } finally {
+        loading.value = false
+    }
+}
+
+function validateForm() {
+    if (!name.value) {
+        message.value = 'Le nom est obligatoire.'
+        error.value = true
+        return false
+    }
+    if (!zipCode.value && (!lat.value || !lng.value)) {
+        message.value = 'Veuillez renseigner soit un code postal, soit des coordonnées GPS complètes.'
+        error.value = true
+        return false
+    }
+    if (zipCode.value && (lat.value || lng.value)) {
+        message.value = 'Vous devez choisir soit par code postal, soit par coordonnées GPS, pas les deux.'
+        error.value = true
+        return false
+    }
+    return true
+}
 
 async function submitForm() {
-    if (!name.value || lat.value === null || lng.value === null) {
-        message.value = 'Tous les champs sont obligatoires.'
-        error.value = true
-        return
-    }
+    if (!validateForm()) return
 
     loading.value = true
     message.value = ''
     error.value = false
 
-    try {
-        // Construire WKT POINT
-        const wkt = `POINT(${lng.value} ${lat.value})`
+    const payload = {
+        name: name.value,
+        user: selectedUserId.value ? Number(selectedUserId.value) : null,
+    }
 
-        // Appel POST vers API Laravel
-        await axios.post('/api/locations', {
-            name: name.value,
-            wkt: wkt,
-        })
-
-        message.value = 'Location créée avec succès !'
-        error.value = false
-        // Reset form
-        name.value = ''
-        lat.value = null
-        lng.value = null
-
-    } catch (e) {
-        message.value = 'Erreur lors de la création.'
-        error.value = true
-    } finally {
-        loading.value = false
+    if (zipCode.value) {
+        payload.zipCode = zipCode.value
+        await postLocation(payload, '/api/locations/name-and-zip-code')
+    } else {
+        payload.wkt = `POINT(${lng.value} ${lat.value})`
+        await postLocation(payload, '/api/locations')
     }
 }
 </script>
@@ -86,7 +156,7 @@ label {
     margin-bottom: 0.25rem;
 }
 
-input {
+input, select {
     width: 100%;
     padding: 0.3rem;
     margin-bottom: 1rem;

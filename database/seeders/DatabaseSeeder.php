@@ -14,18 +14,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+         User::factory(10)->create();
 
         User::factory()->create([
             'name' => 'Aurélie Ferré',
             'email' => 'ferre.aurelie@wanadoo.fr',
         ]);
 
-        $postalCodes = ['75001', '13001', '31000', '59000', '44000'];
+        $cities = [
+            'Paris' => '75001',
+            'Marseille' => '13001',
+            'Toulouse' => '31000',
+            'Lille' => '59000',
+            'Lyon' => '69001'
+        ];
 
-        foreach ($postalCodes as $code) {
+        foreach ($cities as $name => $zipCode) {
             Location::factory()
-                ->withPostalCode($code)
+                ->withNameAndZipCode($zipCode, $name)
                 ->create();
         }
     }

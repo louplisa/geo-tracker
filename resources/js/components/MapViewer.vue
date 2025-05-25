@@ -14,12 +14,34 @@ onMounted(async () => {
 
     const res = await fetch('/api/locations')
     const locations = await res.json()
+    const groupedByPoint = new Map()
 
     locations.forEach(loc => {
-        L.marker([loc.coordinates.lat, loc.coordinates.lng])
-            .addTo(map)
-            .bindPopup(`<b>${loc.name}</b>`)
+        const key = `${loc.name}-${loc.coordinates.lat}-${loc.coordinates.lng}`
+        if (!groupedByPoint.has(key)) {
+            groupedByPoint.set(key, {
+                name: loc.name,
+                lat: loc.coordinates.lat,
+                lng: loc.coordinates.lng,
+                users: []
+            })
+        }
 
+        const entry = groupedByPoint.get(key)
+
+        if (loc.user) {
+            entry.users.push(loc.user.name)
+        }
+    })
+
+    groupedByPoint.forEach(entry => {
+        const userList = entry.users.length > 0
+            ? '<br /><b>Utilisateurs :</b><br />' + entry.users.map(u => `👤 ${u}`).join('<br />')
+            : '<br /><i>Aucun utilisateur</i>'
+
+        L.marker([entry.lat, entry.lng])
+            .addTo(map)
+            .bindPopup(`<b>${entry.name}</b>${userList}`)
     })
 })
 </script>

@@ -21,22 +21,24 @@ class LocationFactory extends Factory
         ];
     }
 
-    public function withPostalCode(string $postalCode): static
+    public function withNameAndZipCode(string $zipCode, string $name): static
     {
-        return $this->afterCreating(function (Location $location) use ($postalCode) {
-            $cityData = GeoGouvHelper::cityByPostalCode($postalCode);
+        $cityData = GeoGouvHelper::cityByNameAndZipCode($name, $zipCode);
 
-            if ($cityData) {
-                DB::update('UPDATE locations SET geom = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?', [
-                    $cityData['lng'],
-                    $cityData['lat'],
-                    $location->id,
-                ]);
+        if (!$cityData) {
+            throw new \Exception("City not found for name $name and zip code $zipCode");
+        }
 
-                // Mettre à jour le nom si nécessaire
-                $location->name = $cityData['name'];
-                $location->save();
-            }
+        return $this->state(function () use ($name) {
+            return [
+                'name' => $name,
+            ];
+        })->afterCreating(function (Location $location) use ($cityData) {
+            DB::update('UPDATE locations SET geom = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?', [
+                $cityData['lng'],
+                $cityData['lat'],
+                $location->id,
+            ]);
         });
     }
 }

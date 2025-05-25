@@ -14,7 +14,9 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-Route::get('/locations/nearby', [LocationController::class, 'nearby']);
+Route::get('/locations/nearby', [LocationController::class, 'nearby'])->name('locations.nearby');
+Route::post('/locations/name-and-zip-code', [LocationController::class, 'storeByNameAndZipCode'])->name('locations.zip-code');
 Route::apiResource('locations', LocationController::class);
+Route::get('/users', [\App\Http\Controllers\Api\UserController::class, 'index'])->name('users.index');
 
 
