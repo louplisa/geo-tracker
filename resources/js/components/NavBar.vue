@@ -3,6 +3,7 @@
         <ul>
             <li><router-link to="/">Accueil</router-link></li>
             <li><router-link to="/map">Carte</router-link></li>
+            <li><router-link to="/locations">Les localisations</router-link></li>
             <li><router-link to="/locations/create">Créer une localisation</router-link></li>
             <li><router-link to="/locations/nearby">Lieux proches</router-link></li>
         </ul>
@@ -36,3 +37,5 @@ a:hover {
     text-decoration: underline;
 }
 </style>
+<script setup lang="ts">
+</script>

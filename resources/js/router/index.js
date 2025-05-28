@@ -3,6 +3,8 @@ import MapSelector from '../components/MapSelector.vue'
 import LocationCreate from "../components/LocationCreate.vue";
 import MapViewer from "../components/MapViewer.vue";
 import NearbyLocations from "../components/NearbyLocations.vue";
+import LocationTable from "../components/LocationTable.vue";
+import LocationEdit from "../components/LocationEdit.vue";
 
 const routes = [
     {
@@ -16,9 +18,19 @@ const routes = [
         component: MapViewer
     },
     {
+        path: '/locations/',
+        name: 'location-index',
+        component: LocationTable,
+    },
+    {
         path: '/locations/create',
         name: 'location-create',
         component: LocationCreate,
+    },
+    {
+        path: '/locations/edit/:id',
+        name: 'location-edit',
+        component: LocationEdit,
     },
     {
         path: '/locations/nearby',

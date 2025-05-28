@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LocationResource;
 use App\Models\Location;
+use App\Models\User;
 use App\Services\LocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LocationController extends Controller
 {
@@ -104,23 +106,31 @@ class LocationController extends Controller
             'name' => 'sometimes|string|max:255',
             'latitude' => 'sometimes|required_with:longitude|numeric',
             'longitude' => 'sometimes|required_with:latitude|numeric',
+            'user' => 'nullable|integer|exists:users,id',
         ]);
-
-        $updates = [];
-
+        Log::debug('Updating location with user:', ['user' => $validated['user']]);
         if (isset($validated['name'])) {
-            $updates['name'] = $validated['name'];
+            $location->name = $validated['name'];
         }
 
         if (isset($validated['latitude']) && isset($validated['longitude'])) {
-            $updates['geom'] = DB::statement('UPDATE locations SET geom = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?', [
+            DB::statement('UPDATE locations SET geom = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE id = ?', [
                 $validated['longitude'], $validated['latitude'], $location->id
             ]);
         }
 
-        $location->update($updates);
+        if (array_key_exists('user', $validated)) {
+            if ($validated['user']) {
+                $user = User::find($validated['user']);
+                $location->locatable()->associate($user);
+            } else {
+                $location->locatable()->dissociate();
+            }
+        }
 
-        return response()->json($location);
+        $location->save();
+
+        return response()->json($location->fresh());
     }
 
     /**

@@ -26,6 +26,7 @@ class LocationService
         return $location;
     }
 
+
     /**
      * Create a location based on city name and zip code, optionally associating a user.
      *
