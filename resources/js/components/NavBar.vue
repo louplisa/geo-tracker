@@ -6,6 +6,7 @@
             <li><router-link to="/locations">Les localisations</router-link></li>
             <li><router-link to="/locations/create">Créer une localisation</router-link></li>
             <li><router-link to="/locations/nearby">Lieux proches</router-link></li>
+            <li><router-link to="/locations/distance-calculator">Calcul de distances</router-link></li>
         </ul>
     </nav>
 </template>
